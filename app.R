@@ -10,57 +10,74 @@
 library(shiny)
 library(polygons)
 
+source("plot_predq.r")
+
 # Define UI for application that draws a histogram
 ui <- fluidPage(
    
    # Application title
-   titlePanel("Old Faithful Geyser Data"),
-   
+   titlePanel("Visualizing your Predictions"),
+   HTML("This shiny app uses the R package <a href='https://github.com/USCBiostats/polygons' target=_blank>polygons</a>"),
    # Sidebar with a slider input for number of bins 
    sidebarLayout(
       sidebarPanel(
-         # sliderInput("bins",
-         #             "Number of bins:",
-         #             min = 1,
-         #             max = 50,
-         #             value = 30),
-        textInput("vals", "Numbers", value="1,2,3,4"),
-        fileInput("tab", "Prediction table")
+        textInput("main", "Title of the plot", value = "Predicted vs Observed"),
+        fileInput("predfile", "Prediction table"),
+        actionButton("clean", "clear")
       ),
-      
       # Show a plot of the generated distribution
       mainPanel(
-         plotOutput("distPlot")
+         plotOutput("predPlot"),
+         tableOutput("dat") #,
+         # downloadLink("predPlot", "Save the plot")
       )
    )
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-   
-   output$distPlot <- renderPlot({
-      # generate bins based on input$bins from ui.R
-      # x    <- faithful[, 2] 
-      # bins <- seq(min(x), max(x), length.out = input$bins + 1)
-      # 
-      # # draw the histogram with the specified number of bins
-      # hist(x, breaks = bins, col = 'darkgray', border = 'white')
-     # vals <- c(1,2,3,10)
-     vals <- as.numeric(strsplit(input$vals, ",")[[1]]) 
-     # Outer (includes labels)
-     piechart(vals, col=colors()[1:length(vals)+20L], border="brown", doughnut = .5,
-              radius=.75, labels=vals, init.angle = 315, last.angle = 270)
-     
-     # Middle
-     piechart(vals,
-              col=adjustcolor(colors()[1:length(vals)+20L], .3), border="black", doughnut = .3,
-              radius=.5, add=TRUE, init.angle = 315, last.angle = 270)
-     
-     # Inner
-     piechart(vals,
-              col=adjustcolor(colors()[1:length(vals)+20L], .6), border="gray", doughnut = .1,
-              radius=.3, add=TRUE, init.angle = 315, last.angle = 270)
-   })
+  
+  # Clear ----------------------------------------------------------------------
+  # This trick from 
+  # https://stackoverflow.com/questions/44203728/how-to-reset-a-value-of-fileinput-in-shiny
+  # Allows setting the returning file to empty the reactive argupent -dat-
+  status <- reactiveValues(clear = FALSE)
+  
+  observeEvent(input$clean, {
+    status$clear <- TRUE
+  })
+  
+  observeEvent(input$predfile, {
+    status$clear <- FALSE
+  })
+  
+  # Reactive arguments ---------------------------------------------------------
+  dat <- reactive({
+    
+    if (status$clear | is.null(input$predfile))
+      return(NULL)
+    
+    ans <- readr::read_csv(input$predfile$datapath)
+    with(ans, list(
+      predicted = cbind(predicted),
+      expected = cbind(expected)
+    ))
+  })
+  
+  # Defining the outputs -------------------------------------------------------
+  
+  # Table with the data that will be printed
+  output$dat <- renderTable(dat())
+  
+  # The fancy plot
+  output$predPlot <- renderPlot({
+    if (is.null(dat()))
+      return(NULL)
+    
+    plot_predq(dat(), main = input$main)
+    
+    })
+  
 }
 
 # Run the application 

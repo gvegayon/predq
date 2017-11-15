@@ -8,7 +8,14 @@
 #
 
 library(shiny)
-library(polygons)
+
+# Need to use the polygons package
+if (!require(polygons)) {
+  devtools::install_github("USCBiostats/polygons")
+  library(polygons)
+}
+  
+
 
 source("plot_predq.r")
 
@@ -27,15 +34,19 @@ ui <- fluidPage(
       ),
       # Show a plot of the generated distribution
       mainPanel(
+        h2("The fancy plot"),
          plotOutput("predPlot"),
-         tableOutput("dat") #,
+         h2("Data"),
+         dataTableOutput("dat"),
+         HTML(markdown::renderMarkdown(text="## Client data `session`")),
+         verbatimTextOutput("clientD")#,
          # downloadLink("predPlot", "Save the plot")
       )
    )
 )
 
 # Define server logic required to draw a histogram
-server <- function(input, output) {
+server <- function(input, output, session) {
   
   # Clear ----------------------------------------------------------------------
   # This trick from 
@@ -67,7 +78,13 @@ server <- function(input, output) {
   # Defining the outputs -------------------------------------------------------
   
   # Table with the data that will be printed
-  output$dat <- renderTable(dat())
+  # Creating a nice datatable object with 5 rows per page
+  output$dat <- renderDataTable({
+    if (!length(dat()))
+      return(NULL)
+    
+    as.data.frame(dat())
+    }, options = list(pageLength=5))
   
   # The fancy plot
   output$predPlot <- renderPlot({
@@ -78,6 +95,8 @@ server <- function(input, output) {
     
     })
   
+  # Clienty data
+  output$clientD <- renderPrint(session$clientData)
 }
 
 # Run the application 

@@ -1,0 +1,9 @@
+---
+title: "Some simple shiny examples"
+author: "George G. Vega Yon"
+date: "November 16, 2017"
+output: html_document
+---
+
+[example1](example1)
+[example2](example1)

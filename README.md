@@ -7,6 +7,61 @@ This is an example of a shiny app for the USC IMAGE group. To run this app, besi
 
 Also, for this to run, you'll need `devtools` ~~and `readr`~~, since the app uses this to install missing dependencies, inparticular, `polygons` and `readr`.
 
+Steps to create a shiny app
+===========================
+
+1.  Set your objectives. In this case, the objective was a simple one: A shiny app that allows users to use this fancy plot to visualize their own predictions.
+
+2.  The basics: Creating the user interface
+
+    ``` r
+    ui <- fluidPage(
+
+      # Application title
+      titlePanel("Here goes the title of your App!"),
+
+      "You can include text like this... it won't hurt!",
+
+      # Here we are using the sidebarLayout 
+      verticalLayout(
+
+        # Enter values
+        textInput("color", "Select a color", value = "blue"),
+
+        # Output values as defined in -server.R
+        textOutput("text_out"),
+        plotOutput("plot_out")
+      )
+
+    )
+    ```
+
+    ``` r
+    # server
+    # The server function is what does all the work in the back 
+    server <- function(input, output) {
+
+      # Whatever was entered by the user will be stored in the `input`.
+      # To return objects we need to put them in `output` using the `render*`
+      # functions: 
+      output$text_out  <- renderText(paste("You selected", input$color))
+      output$plot_out  <- renderPlot({
+
+        # Does the color exists
+        validate(need(input$color, "Please specify a color."))
+        validate(
+          need(
+            is.matrix(try(col2rgb(input$color))),
+            "Please make sure that the color exists!"
+            )
+          )
+
+        plot(USArrests, col = input$color)
+      })
+
+    }
+    ```
+
 Shiny server in the Bioghost server
 ===================================
 

@@ -5,6 +5,8 @@ predq
 
 This is an example of a shiny app for the USC IMAGE group. To run this app, besides of having `R` and `shiny`, you'll need to install the R package [`polygons`](https://github.com/USCBiostats/polygons), which is on development.
 
+Also, for this to run, you'll need `devtools` ~~and `readr`~~, since the app uses this to install missing dependencies, inparticular, `polygons` and `readr`.
+
 Shiny server in the Bioghost server
 ===================================
 

@@ -14,9 +14,14 @@ if (!require(polygons)) {
   devtools::install_github("USCBiostats/polygons")
   library(polygons)
 }
-  
+ 
+if (!require(readr)) {
+  devtools::install_github("hadley/readr")
+  library(readr)
+} 
 
 
+# You can actually run source code!
 source("plot_predq.r")
 
 # Define UI for application that draws a histogram
@@ -29,9 +34,15 @@ ui <- fluidPage(
    sidebarLayout(
       sidebarPanel(
         textInput("main", "Title of the plot", value = "Predicted vs Observed"),
+        hr(),
         fileInput("predfile", "Prediction table"),
-        actionButton("clean", "clear")
-      ),
+        helpText("The file must be a CSV file with two columns, \"predicted\" and \"observed\"."),
+        hr(),
+        fluidRow(
+          column(12, actionButton("clean", "Clear the data")),
+          column(12, actionButton("example", "Give me an example"))
+        )
+        ),
       # Show a plot of the generated distribution
       mainPanel(
         h2("The fancy plot"),
@@ -43,6 +54,7 @@ ui <- fluidPage(
          # downloadLink("predPlot", "Save the plot")
       )
    )
+   
 )
 
 # Define server logic required to draw a histogram
@@ -52,19 +64,46 @@ server <- function(input, output, session) {
   # This trick from 
   # https://stackoverflow.com/questions/44203728/how-to-reset-a-value-of-fileinput-in-shiny
   # Allows setting the returning file to empty the reactive argupent -dat-
-  status <- reactiveValues(clear = FALSE)
+  status <- reactiveValues(clear = FALSE, example=FALSE)
   
+  # For the clear button
   observeEvent(input$clean, {
-    status$clear <- TRUE
+    status$clear   <- TRUE
+    status$example <- FALSE
+  })
+  
+  
+  # For the example button
+  observeEvent(input$example, {
+    status$example <- TRUE
+    status$clear   <- FALSE
   })
   
   observeEvent(input$predfile, {
-    status$clear <- FALSE
+    status$clear   <- FALSE
+    status$example <- FALSE
   })
+  
+  
   
   # Reactive arguments ---------------------------------------------------------
   dat <- reactive({
     
+    if (status$example) {
+      
+      # Re set it to false so we can re run it
+      # status$example <- FALSE
+      
+      return(
+        list(
+          expected  = cbind(runif(20)),
+          predicted = cbind(runif(20))
+        )
+      )
+    }
+    
+    
+    # If either the clear button was clicked or predfile is empty, then null
     if (status$clear | is.null(input$predfile))
       return(NULL)
     

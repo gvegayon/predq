@@ -43,7 +43,6 @@ server <- function(input, output, session) {
       )
     }
     
-    
     # If either the clear button was clicked or predfile is empty, then null
     if (status$clear | is.null(input$predfile))
       return(NULL)
@@ -53,6 +52,14 @@ server <- function(input, output, session) {
       predicted = cbind(predicted),
       expected = cbind(expected)
     ))
+  })
+  
+  # Getting colors
+  getcolors <- reactive({
+    if (is.null(input$colors))
+      return(NULL)
+    
+    strsplit(input$colors, ",")[[1]]
   })
   
   # Defining the outputs -------------------------------------------------------
@@ -76,7 +83,17 @@ server <- function(input, output, session) {
         message = "Please either select a file from your computer or click on 'Give me an example'")
       )
     
-    plot_predq(dat(), main = input$main)
+    # Checking colors
+    validate(need(getcolors(), "Please specify a color."))
+    validate(
+      need(
+        is.matrix(try(col2rgb(getcolors()), silent = TRUE)),
+        "Please make sure that the color exists!"
+      )
+    )
+    
+    plot_predq(dat(), main = input$main, main.colorkey = input$keymain,
+               colors = getcolors())
     
   })
   

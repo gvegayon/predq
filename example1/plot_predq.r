@@ -1,5 +1,16 @@
-library(polygons)
 
+# Need to use the polygons package
+if (!require(polygons)) {
+  devtools::install_github("USCBiostats/polygons")
+  library(polygons)
+}
+
+if (!require(readr)) {
+  devtools::install_github("hadley/readr")
+  library(readr)
+} 
+
+# The plotting function
 plot_predq <- function(
   x,
   y=NULL, 
@@ -7,6 +18,7 @@ plot_predq <- function(
   main.colorkey = "Probability of Functional Annotation",
   include.labels = NULL,
   labels.col = "black",
+  colors = c("steelblue", "lightgray", "darkred"),
   ...) {
   
   y <- rep(1L, nrow(x$expected))
@@ -38,9 +50,19 @@ plot_predq <- function(
   
   # Function to color the absence/presence of function
   blue <- function(x) {
-    ans <- grDevices::colorRamp(c("steelblue", "lightgray", "darkred"))(x)
+    
+    # Mapping the colors
+    ans <- grDevices::colorRamp(colors)(x)
     grDevices::rgb(ans[,1], ans[,2], ans[,3], 200, maxColorValue = 255)
   }
+  
+  xold <- x
+  
+  # Range
+  xran <- with(x, range(c(expected, predicted), na.rm = TRUE))
+  
+  x$predicted <- (x$predicted - xran[1])/(xran[2] - xran[1])
+  x$expected  <- (x$expected - xran[1])/(xran[2] - xran[1])
   
   # Outer pie
   piechart(
@@ -98,13 +120,15 @@ plot_predq <- function(
   graphics::plot.new()
   graphics::plot.window(c(0,1), c(0,1))
   
+  
+  
   colorkey(
     .10, 0, .90, .05, 
-    label.from = 'No function',
-    label.to = "Function",
-    cols = grDevices::adjustcolor(c("steelblue", "lightgray", "darkred"), alpha.f = 200/255),
-    tick.range = c(0,1),
-    tick.marks = c(0,.25,.5,.75,1),
+    label.from = '',
+    label.to = "",
+    cols = grDevices::adjustcolor(colors, alpha.f = 200/255),
+    tick.range = xran,
+    tick.marks = round(seq(xran[1], xran[2], length.out = 5), 1),
     nlevels = 200,
     main = main.colorkey
   )
